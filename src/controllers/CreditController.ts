@@ -54,8 +54,11 @@ export class CreditController {
             const newBalance = await CreditService.consume(userId, parseFloat(amount), executionId, description || 'General Consumption');
             res.json({ balance: newBalance });
         } catch (error: any) {
-            logger.error({ error, body: req.body }, 'Failed to consume credits in controller');
-            res.status(402).json({ error: error.message || 'Payment Required (Insufficient Funds)' });
+            logger.error({ err: error, body: req.body }, 'Failed to consume credits in controller');
+            res.status(402).json({ 
+                error: error.message || 'Payment Required (Insufficient Funds)',
+                details: error.message 
+            });
         }
     }
 

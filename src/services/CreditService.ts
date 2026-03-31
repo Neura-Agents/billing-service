@@ -36,20 +36,17 @@ export class CreditService {
         try {
             await client.query('BEGIN');
 
-            // 1. Check current balance & update
-            // Using NUMERIC for precision. UPDATE ... RETURNING avoids race conditions.
+            // 1. Get current balance and consume (cap at 0)
             const updateResult = await client.query(
                 `UPDATE user_wallets 
-                 SET credits = credits - $2, updated_at = NOW() 
-                 WHERE user_id = $1 AND credits >= $2 
+                 SET credits = GREATEST(0, credits - $2), updated_at = NOW() 
+                 WHERE user_id = $1 
                  RETURNING credits`,
                 [userId, amount]
             );
 
             if (updateResult.rows.length === 0) {
-                // Check if user even has a wallet
-                const balance = await this.getBalance(userId);
-                throw new Error(`Insufficient credits. Current balance: ${balance}, Required: ${amount}`);
+                throw new Error(`Wallet not found for user: ${userId}`);
             }
 
             const newBalance = parseFloat(updateResult.rows[0].credits);
@@ -62,11 +59,11 @@ export class CreditService {
             );
 
             await client.query('COMMIT');
-            logger.info({ userId, amount, executionId }, 'Credits consumed successfully');
+            logger.info({ userId, amount, executionId, newBalance }, 'Credits consumed (capped at 0)');
             return newBalance;
         } catch (error) {
             await client.query('ROLLBACK');
-            logger.error({ error, userId, amount, executionId }, 'Failed to consume credits');
+            logger.error({ err: error, userId, amount, executionId }, 'Failed to consume credits');
             throw error;
         } finally {
             client.release();

@@ -11,7 +11,7 @@ export const ENV = {
         PORT: Number(process.env.DB_PORT) || 5432,
         USER: process.env.DB_USER || 'postgres',
         PASSWORD: process.env.DB_PASSWORD || 'postgres',
-        NAME: process.env.BILLING_DB_NAME || 'neura-agents-platform',
+        NAME: process.env.DB_NAME || 'neura-agents-platform',
     },
     LOG: {
         LEVEL: process.env.LOG_LEVEL || 'info',

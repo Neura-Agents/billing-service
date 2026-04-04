@@ -8,6 +8,7 @@ export const pool = new Pool({
     user: ENV.DB.USER,
     password: ENV.DB.PASSWORD,
     database: ENV.DB.NAME,
+    options: `-c search_path=${ENV.DB.SCHEMA},public`,
 });
 
 export const initDb = async () => {

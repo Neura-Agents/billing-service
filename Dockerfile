@@ -1,22 +1,27 @@
-FROM node:20-slim AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 COPY . .
 RUN npm run build
 
-FROM node:20-slim
+# Use a cleaner production image
+FROM node:20-alpine AS runner
 
 WORKDIR /app
 
+# Set production environment
+ENV NODE_ENV=production
+
 COPY package*.json ./
-RUN npm install --production
+RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
 
+# Standardize on port (though Coolify can map it)
 EXPOSE 3007
 
-CMD ["npm", "start"]
+CMD ["node", "dist/index.js"]

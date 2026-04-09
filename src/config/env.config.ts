@@ -21,5 +21,9 @@ export const ENV = {
     KEYCLOAK: {
         ISSUER_URL: process.env.KEYCLOAK_ISSUER_URL || 'http://keycloak:8080/realms/agentic-ai',
         PUBLIC_ISSUER_URL: process.env.KEYCLOAK_PUBLIC_ISSUER_URL || 'http://localhost:8081/realms/agentic-ai',
+    },
+    RAZORPAY: {
+        KEY_ID: process.env.RAZORPAY_KEY_ID || '',
+        KEY_SECRET: process.env.RAZORPAY_KEY_SECRET || '',
     }
 };

@@ -36,6 +36,24 @@ export const initDb = async () => {
             CREATE INDEX IF NOT EXISTS idx_billing_transactions_user_id ON billing_transactions(user_id);
             CREATE INDEX IF NOT EXISTS idx_billing_transactions_execution_id ON billing_transactions(execution_id);
 
+            CREATE TABLE IF NOT EXISTS payment_orders (
+                order_id VARCHAR(255) PRIMARY KEY,
+                user_id VARCHAR(255) NOT NULL,
+                amount NUMERIC(15, 2) NOT NULL, -- This will be INR
+                amount_usd NUMERIC(15, 2),        -- Original USD amount
+                exchange_rate NUMERIC(10, 4),    -- Rate used
+                currency VARCHAR(10) DEFAULT 'INR',
+                status VARCHAR(50) DEFAULT 'created',
+                receipt VARCHAR(255),
+                payment_id VARCHAR(255),
+                signature VARCHAR(255),
+                metadata JSONB DEFAULT '{}',
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_payment_orders_user_id ON payment_orders(user_id);
+
             DO $$
             BEGIN
                 -- Constraint 1: Transactions reference Wallets

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { CreditController } from '../controllers/CreditController';
+import { RazorpayController } from '../controllers/RazorpayController';
 import { authenticate, internalAuth } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -16,7 +17,11 @@ const authorizeBalance = (req: any, res: any, next: any) => {
 
 // Publicly accessible via Gateway (User authenticated) OR internal
 router.get('/balance', authorizeBalance, CreditController.getBalance);
-router.get('/history', authenticate, CreditController.getTransactions);
+router.get('/transactions', authenticate, CreditController.getTransactions);
+
+// Razorpay Integration
+router.post('/razorpay/create-order', authenticate, RazorpayController.createOrder);
+router.post('/razorpay/verify', authenticate, RazorpayController.verifyPayment);
 
 // Internal routes (Only services with shared secret)
 router.post('/consume', internalAuth, CreditController.consume);

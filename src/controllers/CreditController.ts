@@ -10,7 +10,7 @@ export class CreditController {
         try {
             // Support both internal (query param) and user (JWT) auth
             const userId = (req.query.userId as string) || req.user?.sub || req.user?.id;
-            
+
             if (!userId) {
                 return res.status(400).json({ error: 'User ID is required' });
             }
@@ -29,11 +29,12 @@ export class CreditController {
     static async getTransactions(req: any, res: Response) {
         try {
             const userId = req.user.sub || req.user.id;
-            const limit = parseInt(req.query.limit as string) || 50;
+            const limit = parseInt(req.query.limit as string) || 10;
             const offset = parseInt(req.query.offset as string) || 0;
-            
-            const transactions = await CreditService.getTransactions(userId, limit, offset);
-            res.json({ transactions });
+            const type = req.query.type as string;
+
+            const result = await CreditService.getTransactions(userId, limit, offset, type);
+            res.json(result);
         } catch (error) {
             logger.error({ error, userId: req.user?.id }, 'Failed to get transactions');
             res.status(500).json({ error: 'Failed to retrieve transaction history' });
@@ -46,7 +47,7 @@ export class CreditController {
     static async consume(req: Request, res: Response) {
         try {
             const { userId, amount, executionId, description } = req.body;
-            
+
             if (!userId || !amount || !executionId) {
                 return res.status(400).json({ error: 'userId, amount, and executionId are required' });
             }
@@ -55,9 +56,9 @@ export class CreditController {
             res.json({ balance: newBalance });
         } catch (error: any) {
             logger.error({ err: error, body: req.body }, 'Failed to consume credits in controller');
-            res.status(402).json({ 
+            res.status(402).json({
                 error: error.message || 'Payment Required (Insufficient Funds)',
-                details: error.message 
+                details: error.message
             });
         }
     }

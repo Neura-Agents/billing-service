@@ -78,7 +78,20 @@ export class CreditService {
         try {
             await client.query('BEGIN');
 
-            // 1. Initialize or update wallet
+            // 1. Check current balance and enforce limit
+            const currentResult = await client.query(
+                'SELECT credits FROM user_wallets WHERE user_id = $1 FOR UPDATE',
+                [userId]
+            );
+            
+            const MAX_CREDITS_PER_TXN = 100000;
+            
+            if (amount > MAX_CREDITS_PER_TXN) {
+                await client.query('ROLLBACK');
+                throw new Error(`Top-up failed: Single top-up cannot exceed ${MAX_CREDITS_PER_TXN.toLocaleString()} credits. Requested: ${amount.toFixed(2)}`);
+            }
+
+            // 2. Initialize or update wallet
             const updateResult = await client.query(
                 `INSERT INTO user_wallets (user_id, credits) 
                  VALUES ($1, $2) 
@@ -110,16 +123,30 @@ export class CreditService {
     }
 
     /**
-     * Get transaction history for a user.
+     * Get transaction history for a user with filters and pagination.
      */
-    static async getTransactions(userId: string, limit: number = 50, offset: number = 0) {
-        const result = await pool.query(
-            `SELECT * FROM billing_transactions 
-             WHERE user_id = $1 
-             ORDER BY created_at DESC 
-             LIMIT $2 OFFSET $3`,
-            [userId, limit, offset]
-        );
-        return result.rows;
+    static async getTransactions(userId: string, limit: number = 50, offset: number = 0, type?: string) {
+        let query = `SELECT * FROM billing_transactions WHERE user_id = $1`;
+        let countQuery = `SELECT COUNT(*) FROM billing_transactions WHERE user_id = $1`;
+        const params: any[] = [userId];
+
+        if (type && type !== 'all') {
+            params.push(type);
+            query += ` AND type = $${params.length}`;
+            countQuery += ` AND type = $${params.length}`;
+        }
+
+        query += ` ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+        const finalParams = [...params, limit, offset];
+
+        const [transactionsResult, countResult] = await Promise.all([
+            pool.query(query, finalParams),
+            pool.query(countQuery, params)
+        ]);
+
+        return {
+            transactions: transactionsResult.rows,
+            total: parseInt(countResult.rows[0].count)
+        };
     }
 }

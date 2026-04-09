@@ -5,6 +5,7 @@ import logger from './config/logger';
 import { initDb } from './config/db.config';
 
 import creditRoutes from './routes/credit.routes';
+import adminRoutes from './routes/admin.routes';
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.get('/health', (req: express.Request, res: express.Response) => {
 
 // Routes
 app.use('/backend/api/billing', creditRoutes);
+app.use('/backend/api/revenue/admin', adminRoutes);
 
 const startServer = async () => {
     try {

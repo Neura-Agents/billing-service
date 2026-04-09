@@ -36,9 +36,23 @@ export const initDb = async () => {
             CREATE INDEX IF NOT EXISTS idx_billing_transactions_user_id ON billing_transactions(user_id);
             CREATE INDEX IF NOT EXISTS idx_billing_transactions_execution_id ON billing_transactions(execution_id);
 
+            CREATE TABLE IF NOT EXISTS payment_gateway_providers (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                name VARCHAR(100) UNIQUE NOT NULL,
+                fee_percentage NUMERIC(5, 2) DEFAULT 2.0, -- 2% standard
+                fixed_fee NUMERIC(10, 2) DEFAULT 0.0,
+                is_active BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );
+
+            INSERT INTO payment_gateway_providers (name, fee_percentage, fixed_fee)
+            VALUES ('Razorpay', 2.0, 0.0)
+            ON CONFLICT (name) DO NOTHING;
+
             CREATE TABLE IF NOT EXISTS payment_orders (
                 order_id VARCHAR(255) PRIMARY KEY,
                 user_id VARCHAR(255) NOT NULL,
+                gateway_id UUID REFERENCES payment_gateway_providers(id),
                 amount NUMERIC(15, 2) NOT NULL, -- This will be INR
                 amount_usd NUMERIC(15, 2),        -- Original USD amount
                 exchange_rate NUMERIC(10, 4),    -- Rate used
@@ -51,6 +65,15 @@ export const initDb = async () => {
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             );
+
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payment_orders' AND column_name = 'gateway_id') THEN
+                    ALTER TABLE payment_orders ADD COLUMN gateway_id UUID REFERENCES payment_gateway_providers(id);
+                    -- Update existing orders to point to Razorpay
+                    UPDATE payment_orders SET gateway_id = (SELECT id FROM payment_gateway_providers WHERE name = 'Razorpay') WHERE gateway_id IS NULL;
+                END IF;
+            END $$;
 
             CREATE INDEX IF NOT EXISTS idx_payment_orders_user_id ON payment_orders(user_id);
 

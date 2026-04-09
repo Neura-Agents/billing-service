@@ -95,3 +95,23 @@ export const internalAuth = (req: Request, res: Response, next: NextFunction) =>
     
     next();
 };
+
+/**
+ * Role-based access control middleware
+ */
+export const checkRole = (roles: string[]) => {
+    return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+        if (!req.user) {
+            return res.status(401).json({ error: 'Unauthorized: No user found in request' });
+        }
+
+        const hasRole = roles.every(role => req.user?.roles?.includes(role));
+        
+        if (!hasRole) {
+            logger.warn({ userId: req.user.id, requiredRoles: roles, userRoles: req.user.roles }, 'Insufficient permissions for endpoint');
+            return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
+        }
+
+        next();
+    };
+};

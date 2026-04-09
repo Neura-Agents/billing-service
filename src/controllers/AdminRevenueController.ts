@@ -15,7 +15,7 @@ export class AdminRevenueController {
                 SELECT 
                     date_trunc('day', po.created_at)::date as date,
                     SUM(po.amount_usd) as revenue,
-                    SUM(po.amount_usd - (po.amount_usd * COALESCE(pgp.fee_percentage, 0) / 100) - COALESCE(pgp.fixed_fee, 0)) as profit,
+                    SUM(po.amount_usd - (po.amount_usd * COALESCE(pgp.fee_percentage, 2.0) / 100) - COALESCE(pgp.fixed_fee, 0)) as profit,
                     COUNT(*) as transactions
                 FROM payment_orders po
                 LEFT JOIN payment_gateway_providers pgp ON po.gateway_id = pgp.id

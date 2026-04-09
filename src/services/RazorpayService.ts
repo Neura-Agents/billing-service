@@ -42,8 +42,8 @@ export class RazorpayService {
             const order = await razorpay.orders.create(options);
 
             await pool.query(
-                `INSERT INTO payment_orders (order_id, user_id, amount, amount_usd, exchange_rate, currency, receipt, status) 
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, 'created')`,
+                `INSERT INTO payment_orders (order_id, user_id, amount, amount_usd, exchange_rate, currency, receipt, status, gateway_id) 
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, 'created', (SELECT id FROM payment_gateway_providers WHERE name = 'Razorpay' LIMIT 1))`,
                 [order.id, userId, inrAmount, usdAmount, rate, currency, receipt]
             );
 

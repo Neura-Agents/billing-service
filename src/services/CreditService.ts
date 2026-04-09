@@ -123,6 +123,17 @@ export class CreditService {
     }
 
     /**
+     * Get fixed bonus credits based on the amount paid.
+     * Pro: >= $100 -> +10 credits
+     * Business: >= $500 -> +75 credits
+     */
+    static getFixedBonus(usdAmount: number): number {
+        if (usdAmount >= 500) return 75;
+        if (usdAmount >= 100) return 10;
+        return 0;
+    }
+
+    /**
      * Get transaction history for a user with filters and pagination.
      */
     static async getTransactions(userId: string, limit: number = 50, offset: number = 0, type?: string) {

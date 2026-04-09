@@ -88,16 +88,23 @@ export class RazorpayController {
                 });
             }
 
-            // 4. Top up the credits (use the original USD amount)
+            // 4. Calculate final credits including fixed bonus
+            const baseAmountUsd = parseFloat(order.amount_usd);
+            const bonusCredits = CreditService.getFixedBonus(baseAmountUsd);
+            const totalCredits = baseAmountUsd + bonusCredits;
+
+            // 5. Top up the credits
             const newBalance = await CreditService.topUp(
                 userId,
-                parseFloat(order.amount_usd),
+                totalCredits,
                 'razorpay',
-                `Top-up via Razorpay: ${razorpay_payment_id}`,
+                `Top-up via Razorpay: ${razorpay_payment_id}${bonusCredits > 0 ? ` (+${bonusCredits} bonus)` : ''}`,
                 { 
                     razorpay_order_id, 
                     razorpay_payment_id,
                     amount_inr: order.amount,
+                    amount_usd_base: baseAmountUsd,
+                    bonus_credits: bonusCredits,
                     exchange_rate: order.exchange_rate
                 }
             );
